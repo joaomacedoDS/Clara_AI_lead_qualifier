@@ -1,0 +1,410 @@
+{
+  "name": "CRM preenchimento de lead qualificado",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0bf4587a-2fd5-49da-8ee6-192143ff3295",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.body.resposta }}",
+        "options": {}
+      },
+      "id": "5018db35-b44f-4b20-90e4-a5fe581be54b",
+      "name": "filtra resposta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenha o array de entrada\nconst items = $input.all();\n\n// Mapeie os itens para extrair o campo 'resposta' e o JSON contido nele\nconst result = items.map(item => {\n  const resposta = item.json.body.resposta;\n\n  // Verifique se o campo 'resposta' contém apenas JSON ou texto seguido de JSON\n  let jsonText;\n  const jsonMatch = resposta.match(/({[\\s\\S]*})/);\n\n  if (jsonMatch && jsonMatch[1]) {\n    jsonText = jsonMatch[1]; // JSON encontrado no campo 'resposta'\n  } else if (resposta.trim().startsWith('{')) {\n    jsonText = resposta.trim(); // Campo 'resposta' contém apenas JSON\n  } else {\n    return { json: { error: 'JSON não encontrado no campo resposta ou mal formatado' } };\n  }\n\n  try {\n    // Tente analisar o JSON extraído\n    const parsedJson = JSON.parse(jsonText);\n    return { json: parsedJson };\n  } catch (error) {\n    // Se ocorrer algum erro ao analisar o JSON, retorne uma mensagem de erro\n    return { json: { error: 'Erro ao analisar o JSON contido no campo resposta', detalhe: error.message } };\n  }\n});\n\nreturn result;\n"
+      },
+      "id": "10af7170-aed1-4908-afff-0d28d816da5f",
+      "name": "separa apenas o json",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a71eef84-b230-488e-9e01-04eb54023e09",
+              "leftValue": "={{ $json.body.resposta }}",
+              "rightValue": "{",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "635697d5-1762-49d2-959a-76e138dd1f71",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        -340,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://crm.rdstation.com/api/v1/token/check",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "70532a14-a8c1-47b4-9c88-0837351e1732",
+      "name": "token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6114197e-181b-4326-9f19-048d8f9be0c8",
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://crm.rdstation.com/api/v1/deals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2c20789e-67a9-4cac-a2ea-a7d99eb45602",
+      "name": "lista negociações",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -760,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.rdstation.com/api/v1/deals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"deal\": {\n    \"name\": \"Alemão teste\",\n    \"deal_stage_id\": \"66ce1d73bddca10027717cf2\",\n    \"deal_custom_fields\": [\n      {\n        \"value\": \"Auto\",\n        \"custom_field_id\": \"66cf5fa4f66b3b002682d0d7\"\n      },\n      {\n        \"custom_field_id\": \"66cf633abc75aa002716efa0\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf622c0cf2d900182f7502\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf635bf83d19001b8866c0\",\n        \"value\": \"Sim\"\n      },\n      {\n        \"custom_field_id\": \"66cf6408972536001b828a8f\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf64444e621a001bb2ff3c\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf65bdeb124700151ba795\",\n        \"value\": \"R$ 500\"\n      },\n      {\n        \"custom_field_id\": \"66cf6618556ed80014a90e1b\",\n        \"value\": \"sem fgts, não vai dar lance\"\n      }\n    ]\n  },\n  \"contacts\": [\n    {\n      \"emails\": [\n        {\n          \"email\": \"johnnygermanmindthegap@gmail.com\"\n        }\n      ],\n      \"name\": \"Alemão teste\",\n      \"phones\": [\n        {\n          \"phone\": \"24988064460\",\n          \"type\": \"cellphone\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "cd2ed7be-9b88-4e99-aebc-ecc6d8fd6ca9",
+      "name": "cria negociação",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -100,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://crm.rdstation.com/api/v1/deals/66d35616b97c730022623e60",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"deal\": {\n    \"deal_lost_note\": \"valor de 40000, não possui veículo, máximo 500, não tem fgts\"\n  }\n}",
+        "options": {}
+      },
+      "id": "27a6c96d-106e-4dae-aeb1-8f92c5c0e3cc",
+      "name": "add interesse lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.rdstation.com/api/v1/deals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"deal\": {\n    \"name\": \"{{ $json.nome }}\",\n    \"deal_stage_id\": \"66ce1d73bddca10027717cf2\",\n    \"deal_custom_fields\": [\n      {\n        \"value\": \"{{ $json.tipo_consorcio }}\",\n        \"custom_field_id\": \"66cf5fa4f66b3b002682d0d7\"\n      },\n      {\n        \"custom_field_id\": \"66cf633abc75aa002716efa0\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf622c0cf2d900182f7502\",\n        \"value\": \"{{ $json.paga_aluguel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf635bf83d19001b8866c0\",\n        \"value\": \"{{ $json.tem_imovel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf6408972536001b828a8f\",\n        \"value\": \"{{ $json.conhece_consorcio }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf64444e621a001bb2ff3c\",\n        \"value\": \"{{ $json.tem_automovel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf65bdeb124700151ba795\",\n        \"value\": \"{{ $json.parcela_ideal }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf6618556ed80014a90e1b\",\n        \"value\": \"{{ $json.possui_recurso }}\"\n      }\n    ]\n  },\n  \"contacts\": [\n    {\n      \"emails\": [\n        {\n          \"email\": \"{{ $json.email }}\"\n        }\n      ],\n      \"name\": \"{{ $json.nome }}\",\n      \"phones\": [\n        {\n          \"phone\": \"{{ $json.numero }}\",\n          \"type\": \"cellphone\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "ac5b6a10-7c28-451d-8ef1-e3fd34bbd7d3",
+      "name": "cria negociação1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://crm.rdstation.com/api/v1/deals",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "66ce1d448713bd0018b2e5ff"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"deal\": {\n    \"name\": \"{{ $json.nome }}\",\n    \"deal_stage_id\": \"66ce1d73bddca10027717cf2\",\n    \"deal_custom_fields\": [\n      {\n        \"value\": \"{{ $json.tipo_consorcio }}\",\n        \"custom_field_id\": \"66cf5fa4f66b3b002682d0d7\"\n      },\n      {\n        \"custom_field_id\": \"66cf633abc75aa002716efa0\",\n        \"value\": \"Não\"\n      },\n      {\n        \"custom_field_id\": \"66cf622c0cf2d900182f7502\",\n        \"value\": \"{{ $json.paga_aluguel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf635bf83d19001b8866c0\",\n        \"value\": \"{{ $json.tem_imovel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf6408972536001b828a8f\",\n        \"value\": \"{{ $json.conhece_consorcio }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf64444e621a001bb2ff3c\",\n        \"value\": \"{{ $json.tem_automovel }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf65bdeb124700151ba795\",\n        \"value\": \"{{ $json.parcela_ideal }}\"\n      },\n      {\n        \"custom_field_id\": \"66cf6618556ed80014a90e1b\",\n        \"value\": \"{{ $json.possui_recurso }}\"\n      }\n    ]\n  },\n  \"contacts\": [\n    {\n      \"emails\": [\n        {\n          \"email\": \"{{ $json.email }}\"\n        }\n      ],\n      \"name\": \"{{ $json.nome }}\",\n      \"phones\": [\n        {\n          \"phone\": \"{{ $json.numero }}\",\n          \"type\": \"cellphone\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "5789e461-791c-429d-a954-95161a66425d",
+      "name": "cria negociação2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        120,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crmaukinvest",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4fb82b7f-4c9c-4c3c-abdf-7b9f95c17752",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        420
+      ],
+      "webhookId": "31238b65-2fc3-4807-9643-022d60067654"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "filtra resposta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "separa apenas o json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filtra resposta": {
+      "main": [
+        [
+          {
+            "node": "cria negociação1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria negociação1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "separa apenas o json": {
+      "main": [
+        [
+          {
+            "node": "cria negociação2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cria negociação2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c84cac9d-699f-4781-acd2-75216bdc1883",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cdd3509c7dccd90b43c2806edd70d78e8e1424b717470beb232914b723193b36"
+  },
+  "id": "mJv7usw1HHwqXHkM",
+  "tags": [
+    {
+      "createdAt": "2024-08-22T17:32:36.693Z",
+      "updatedAt": "2024-08-22T17:32:36.693Z",
+      "id": "8JedXHkWKrGaqYFo",
+      "name": "Aukinvest"
+    }
+  ]
+}
