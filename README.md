@@ -8,9 +8,9 @@ This repository contains a bot that uses AI to qualify leads for a consortium co
 
 The main plan is that, through a WhatsApp chat, any potential customer will be interviewed by a personalized AI, following the company's criteria to be considered as an opportunity or not.
 
-![Clara service 1](Clara_service_1.jpg)  
-![Clara service 2](Clara_service_2.jpg)  
-![Clara service 3](Clara_service_3.jpg)
+![Clara service 1](Clara_service_1.jpeg)  
+![Clara service 2](Clara_service_2.jpeg)  
+![Clara service 3](Clara_service_3.jpeg)
 
 If so, the bot automatically registers the customer's data on the company's CRM system.
 
